@@ -6,7 +6,7 @@ const routes         = require('./config/routes');
 const app            = express();
 
 mongoose.Promise = require('bluebird');
-mongoose.connect.connect(db);
+mongoose.connect(db);
 
 app.set('view engine', 'ejs');
 app.set('views', `${__dirname}/views`);
