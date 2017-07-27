@@ -1,20 +1,19 @@
-const User = require('../models/user');
-const Game = require('../models/game');
+const mongoose = require('mongoose');
 
-function usersShow(req, res) {
-  User
-    .findById(req.params.id)
-    .exec()
-    .then(user => {
-      Game
-        .find({ createdBy: user._id })
-        .exec()
-        .then(games => {
-          res.render('users/show', { user, games });
-        });
-    });
-}
+const commentSchema = new mongoose.Schema({
+  body: String,
+  user: { type: mongoose.Schema.ObjectId, ref: 'User' }
+});
 
-module.exports = {
-  show: usersShow
-};
+const gameSchema = new mongoose.Schema({
+  name: { type: String, required: true },
+  releaseDate: { type: String },
+  synopsis: { type: String },
+  genre: { type: String },
+  videos: { type: String },
+  images: [{ type: String }],
+  comments: [commentSchema],
+  createdBy: { type: mongoose.Schema.ObjectId, ref: 'User' }
+});
+
+module.exports = mongoose.model('Game', gameSchema);

@@ -1,57 +1,91 @@
-const router        = require('express').Router();
+const Game = require('../models/game');
+const genres = [
+  'Action',
+  'RPG',
+  'Crime',
+  'Family',
+  'Fantasy',
+  'Horror',
+  'Sci',
+  'Sport',
+  'Thriller'
+];
 
-const statics       = require('../controllers/statics');
-const sessions      = require('../controllers/sessions');
-const registrations = require('../controllers/registrations');
-const games         = require('../controllers/games');
-const users         = require('../controllers/users');
-const comments      = require('../controllers/comments');
-
-function secureRoute(req, res, next) {
-  if (!req.session.userId) {
-    return req.session.regenerate(() => {
-      req.flash('danger', 'You must be logged in to view this content');
-      res.redirect('/login');
-    });
-  }
-
-  return next();
+function gamesIndex(req, res, next) {
+  Game
+    .find()
+    .then((games) => res.render('games/index', { games }))
+    .catch(next);
 }
 
-router.route('/')
-  .get(statics.index);
+function gamesNew(req, res) {
+  res.render('games/new', { genres });
+}
 
-router.route('/games')
-  .get(games.index)
-  .post(secureRoute, games.create);
+function gamesCreate(req, res, next) {
+  req.body.createdBy = req.user._id;
 
-router.route('/games/new')
-  .get(secureRoute, games.new);
+  Game
+    .create(req.body)
+    .then(() => res.redirect('/games'))
+    .catch(next);
+}
 
-router.route('/games/:id')
-  .get(games.show)
-  .post(secureRoute, comments.create)
-  .put(secureRoute, games.update)
-  .delete(secureRoute, games.delete);
+function gamesShow(req, res, next) {
+  Game
+    .findById(req.params.id)
+    .populate('createdBy comments.user')
+    .exec()
+    .then((game) => {
+      if(!game) return res.status(404).render('statics/404');
+      res.render('games/show', { game });
+    })
+    .catch(next);
+}
 
-router.route('/games/:id/edit')
-  .get(games.edit);
+function gamesEdit(req, res, next) {
+  Game
+    .findById(req.params.id)
+    .then((game) => {
+      if(!game) return res.status(404).render('statics/404');
+      res.render('games/edit', { game, genres });
+    })
+    .catch(next);
+}
 
-router.route('/games/:filmId/comments/:commentId')
-  .delete(comments.delete);
+function gamesUpdate(req, res, next) {
+  Game
+    .findById(req.params.id)
+    .then((game) => {
+      if(!game) return res.status(404).render('statics/404');
 
-router.route('/register')
-  .get(registrations.new)
-  .post(registrations.create);
+      for(const field in req.body) {
+        game[field] = req.body[field];
+      }
 
-router.route('/login')
-  .get(sessions.new)
-  .post(sessions.create);
+      return game.save();
+    })
+    .then((game) => res.redirect(`/games/${game.id}`))
+    .catch(next);
+}
 
-router.route('/logout')
-  .get(sessions.delete);
+function gamesDelete(req, res, next) {
+  Game
+    .findById(req.params.id)
+    .then((game) => {
+      if(!game) return res.status(404).render('statics/404');
+      return game.remove();
+    })
+    .then(() => res.redirect('/games'))
+    .catch(next);
+}
 
-router.route('/users/:id')
-  .get(users.show);
-
-module.exports = router;
+module.exports = {
+  index: gamesIndex,
+  new: gamesNew,
+  create: gamesCreate,
+  show: gamesShow,
+  edit: gamesEdit,
+  update: gamesUpdate,
+  delete: gamesDelete
+};

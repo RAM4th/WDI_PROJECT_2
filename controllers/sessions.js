@@ -1,26 +1,31 @@
 const User = require('../models/user');
 
-function registrationsNew(req, res) {
-  return res.render('registrations/new');
+function sessionsNew(req, res) {
+  res.render('sessions/new');
 }
 
-function registrationsCreate(req, res) {
+function sessionsCreate(req, res) {
   User
-    .create(req.body)
-    .then(user => {
-      req.flash('info', `Thanks for registering, ${user.username}!`);
-      req.sessions.userId = user._id;
-      res.redirect('/');
-    })
-    .catch((err) => {
-      if (err.name === 'ValidationError') {
-        return res.status(400).render('registrations/new', { message: 'Passwords do not match' });
+    .findOne({ email: req.body.email })
+    .then((user) => {
+      if(!user || !user.validatePassword(req.body.password)) {
+        return res.status(401).render('sessions/new', { message: 'Unrecognised credentials' });
       }
-      res.status(500).end();
+
+      req.flash('info', `Thanks for logging in, ${user.username}!`);
+
+      req.session.userId = user._id;
+
+      return res.redirect('/');
     });
 }
 
+function sessionsDelete(req, res) {
+  return req.session.regenerate(() => res.redirect('/'));
+}
+
 module.exports = {
-  new: registrationsNew,
-  create: registrationsCreate
+  new: sessionsNew,
+  create: sessionsCreate,
+  delete: sessionsDelete
 };

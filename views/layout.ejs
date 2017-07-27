@@ -2,13 +2,21 @@
 <html>
   <head>
     <meta charset="utf-8">
-    <title>Project 2</title>
+    <title>Project 2 - GAMED</title>
     <script src="/js/client.js" charset="utf-8"></script>
     <link rel="stylesheet" href="/css/style.css">
+    <% include ./partials/stylesheets %>
   </head>
   <body>
+    <% include ./partials/navbar %>
     <main>
+      class="container">
+      <% for (const type in messages) { %>
+        <p class="alert alert-<%= type %>"><%= messages[type] %></p>
+      <% } %>
+
       <%- body %>
     </main>
+    <% include ./partials/scripts %>
   </body>
 </html>
